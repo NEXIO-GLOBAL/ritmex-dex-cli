@@ -10,6 +10,7 @@ import { useAsterFunding } from "./src/hooks/useAsterFunding";
 import { useFundingRows } from "./src/hooks/useFundingRows";
 import { useBackpackFunding } from "./src/hooks/useBackpackFunding";
 import { useBinanceFunding } from "./src/hooks/useBinanceFunding";
+import { useVariationalFunding } from "./src/hooks/useVariationalFunding";
 import { useTableSorting, type HeaderConfig } from "./src/hooks/useTableSorting";
 import { useKeyboardNavigation } from "./src/hooks/useKeyboardNavigation";
 import { useSnapshotPersistence } from "./src/hooks/useSnapshotPersistence";
@@ -37,6 +38,7 @@ const buildHeaders = (enabled: ExchangeKey[]): HeaderConfig[] => {
   if (enabled.includes("grvt")) fundingCols.push({ key: "grvtFunding", label: "GRVT" });
   if (enabled.includes("aster")) fundingCols.push({ key: "asterFunding", label: "Aster" });
   if (enabled.includes("backpack")) fundingCols.push({ key: "backpackFunding", label: "Backpack" });
+  if (enabled.includes("variational")) fundingCols.push({ key: "variationalFunding", label: "Variational" });
 
   let shortcutCode = 50; // '2'
   fundingCols.forEach((col) => {
@@ -71,6 +73,7 @@ const App: React.FC = () => {
   const aster = useAsterFunding();
   const backpack = useBackpackFunding();
   const binance = useBinanceFunding();
+  const variational = useVariationalFunding();
 
   const { rows, lastUpdated, status: rowStatus } = useFundingRows({
     edgexFunding: edgex.data,
@@ -79,6 +82,7 @@ const App: React.FC = () => {
     asterRates: aster.rates,
     backpackRates: backpack.rates,
     binanceRates: binance.rates,
+    variationalRates: variational.rates,
     initialRows: INITIAL_ROWS,
     initialLastUpdated: INITIAL_LAST_UPDATED,
   });
@@ -123,7 +127,7 @@ const App: React.FC = () => {
   });
 
   const totalRows = limitedRows.length;
-  const fundingError = edgex.error ?? lighter.error ?? grvt.error ?? aster.error ?? backpack.error ?? binance.error ?? null;
+  const fundingError = edgex.error ?? lighter.error ?? grvt.error ?? aster.error ?? backpack.error ?? binance.error ?? variational.error ?? null;
   const hasEdgexData = Object.keys(edgex.data).length > 0;
 
   const statusMessage = useMemo(() => {
@@ -166,14 +170,17 @@ const App: React.FC = () => {
     if (binance.isRefreshing) {
       return "Refreshing Binance funding data...";
     }
-    
+
+    if (variational.isRefreshing) {
+      return "Refreshing Variational funding data...";
+    }
 
     if (rowStatus === "empty") {
       return "No overlapping contracts found.";
     }
 
     return "";
-  }, [edgex.isConnecting, edgex.isConnected, hasEdgexData, lighter.isRefreshing, grvt.isRefreshing, aster.isRefreshing, backpack.isRefreshing, binance.isRefreshing, rowStatus]);
+  }, [edgex.isConnecting, edgex.isConnected, hasEdgexData, lighter.isRefreshing, grvt.isRefreshing, aster.isRefreshing, backpack.isRefreshing, binance.isRefreshing, variational.isRefreshing, rowStatus]);
 
   const topSpreads = useMemo(
     () => calculateTopSpreads(sorting.sortedRows, 10, CAPITAL_USD),

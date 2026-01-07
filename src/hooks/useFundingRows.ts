@@ -4,6 +4,7 @@ import type { LighterFundingEntry } from "../types/lighter";
 import type { TableRow } from "../types/table";
 import type { BackpackFundingEntry } from "../types/backpack";
 import type { AsterFundingEntry } from "../types/aster";
+import type { VariationalFundingEntry } from "../types/variational";
 import { buildTableRows } from "../utils/table";
 import { saveSnapshot } from "../utils/snapshot";
 
@@ -22,6 +23,7 @@ interface FundingRowsArgs {
   asterRates: AsterFundingEntry[];
   backpackRates?: BackpackFundingEntry[];
   binanceRates?: Array<{ symbol: string; rate: number }>;
+  variationalRates?: VariationalFundingEntry[];
   initialRows: TableRow[];
   initialLastUpdated: Date | null;
 }
@@ -39,6 +41,7 @@ export const useFundingRows = ({
   asterRates,
   backpackRates = [],
   binanceRates = [],
+  variationalRates = [],
   initialRows,
   initialLastUpdated,
 }: FundingRowsArgs): FundingRowsState => {
@@ -52,8 +55,9 @@ export const useFundingRows = ({
     const hasGrvtData = Object.keys(grvtFunding).length > 0;
     const hasAsterData = asterRates.length > 0;
     const hasBackpackData = backpackRates.length > 0;
+    const hasVariationalData = variationalRates.length > 0;
 
-    if (!hasEdgexData && !hasLighterData && !hasGrvtData && !hasAsterData && !hasBackpackData) {
+    if (!hasEdgexData && !hasLighterData && !hasGrvtData && !hasAsterData && !hasBackpackData && !hasVariationalData) {
       setStatus(initialRows.length ? "ready" : "idle");
       return;
     }
@@ -72,7 +76,7 @@ export const useFundingRows = ({
       setStatus("waiting-grvt");
     }
 
-    const nextRows = buildTableRows(edgexFunding, lighterRates, grvtFunding, asterRates, backpackRates, binanceRates);
+    const nextRows = buildTableRows(edgexFunding, lighterRates, grvtFunding, asterRates, backpackRates, binanceRates, variationalRates);
 
     if (!nextRows.length) {
       setRows([]);
@@ -86,7 +90,7 @@ export const useFundingRows = ({
     const timestamp = new Date();
     setLastUpdated(timestamp);
     void saveSnapshot({ rows: nextRows, lastUpdated: timestamp.toISOString() });
-  }, [edgexFunding, lighterRates, grvtFunding, asterRates, backpackRates, binanceRates, initialRows.length]);
+  }, [edgexFunding, lighterRates, grvtFunding, asterRates, backpackRates, binanceRates, variationalRates, initialRows.length]);
 
   return { rows, lastUpdated, status };
 };

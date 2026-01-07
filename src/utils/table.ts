@@ -3,6 +3,7 @@ import type { LighterFundingEntry } from "../types/lighter";
 import type { DisplayRow, SortKey, TableRow } from "../types/table";
 import type { AsterFundingEntry } from "../types/aster";
 import type { BackpackFundingEntry } from "../types/backpack";
+import type { VariationalFundingEntry } from "../types/variational";
 import { formatArbValue, formatRateValue, normaliseSymbol } from "./format";
 
 export const buildTableRows = (
@@ -11,13 +12,15 @@ export const buildTableRows = (
   grvtFundingBySymbol: Record<string, number>,
   asterRates: AsterFundingEntry[],
   backpackRates: BackpackFundingEntry[] = [],
-  binanceRates: Array<{ symbol: string; rate: number }> = []
+  binanceRates: Array<{ symbol: string; rate: number }> = [],
+  variationalRates: VariationalFundingEntry[] = []
 ): TableRow[] => {
   const lighterMap = new Map<string, number>();
   const binanceMap = new Map<string, number>();
   const asterMap = new Map<string, number>();
   const hyperliquidMap = new Map<string, number>();
   const backpackMap = new Map<string, number>();
+  const variationalMap = new Map<string, number>();
 
   lighterRates.forEach((entry) => {
     const symbolKey = entry.symbol.toUpperCase();
@@ -46,6 +49,11 @@ export const buildTableRows = (
     backpackMap.set(symbolKey, entry.rate);
   });
 
+  variationalRates.forEach((entry) => {
+    const symbolKey = entry.symbol.toUpperCase();
+    variationalMap.set(symbolKey, entry.rate);
+  });
+
   return Object.values(edgexFundingById)
     .filter((entry): entry is EdgexFundingEntry => Boolean(entry))
     .reduce<TableRow[]>((accumulator, entry) => {
@@ -57,6 +65,7 @@ export const buildTableRows = (
       const asterFunding = asterMap.get(symbol);
       const backpackFunding = backpackMap.get(symbol);
       const binanceFunding = binanceMap.get(symbol);
+      const variationalFunding = variationalMap.get(symbol);
 
       const availableRates = [
         lighterFunding,
@@ -66,6 +75,7 @@ export const buildTableRows = (
         asterFunding,
         binanceFunding,
         backpackFunding,
+        variationalFunding,
       ].filter(
         (value) => value !== undefined
       );
@@ -108,6 +118,10 @@ export const buildTableRows = (
 
       if (backpackFunding !== undefined) {
         row.backpackFunding = backpackFunding;
+      }
+
+      if (variationalFunding !== undefined) {
+        row.variationalFunding = variationalFunding;
       }
 
       if (lighterFunding !== undefined && edgexFunding !== undefined) {
@@ -183,6 +197,9 @@ export const buildDisplayRow = (row: TableRow, columns: SortKey[]): DisplayRow =
     case "asterFunding":
       accumulator[column] = formatRateValue(row.asterFunding);
       break;
+      case "variationalFunding":
+        accumulator[column] = formatRateValue(row.variationalFunding);
+        break;
       case "lighterEdgexArb":
         accumulator[column] = formatArbValue(row.lighterEdgexArb);
         break;
